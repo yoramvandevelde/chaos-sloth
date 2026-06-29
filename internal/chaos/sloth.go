@@ -81,19 +81,21 @@ func (s *Sloth) strike(ctx context.Context) error {
 	slog.Info("striking target", "target", label, "action", action, "dry_run", s.cfg.Chaos.DryRun)
 
 	if s.cfg.Chaos.DryRun {
-		if action == config.ActionHibernate || action == config.ActionPause {
-			slog.Info("[dry-run] would pause/hibernate then resume", "target", label, "resume_after", s.cfg.Chaos.ResumeAfter.Duration)
+		if action != config.ActionReset {
+			slog.Info("[dry-run] would disrupt then recover", "target", label, "action", action, "resume_after", s.cfg.Chaos.ResumeAfter.Duration)
+		} else {
+			slog.Info("[dry-run] would reset (self-recovering)", "target", label)
 		}
 		return nil
 	}
 
 	switch action {
 	case config.ActionHibernate:
-		return s.pauseAndResume(ctx, target, label, s.client.HibernateVM)
+		return s.disruptAndRecover(ctx, target, label, s.client.HibernateVM, s.client.ResumeVM)
 	case config.ActionPause:
-		return s.pauseAndResume(ctx, target, label, s.client.PauseVM)
+		return s.disruptAndRecover(ctx, target, label, s.client.PauseVM, s.client.ResumeVM)
 	case config.ActionStop:
-		return s.client.StopVM(ctx, target.Node, target.VMID)
+		return s.disruptAndRecover(ctx, target, label, s.client.StopVM, s.client.StartVM)
 	case config.ActionReset:
 		return s.client.ResetVM(ctx, target.Node, target.VMID)
 	default:
@@ -103,28 +105,30 @@ func (s *Sloth) strike(ctx context.Context) error {
 
 type vmAction func(ctx context.Context, node string, vmid int) error
 
-func (s *Sloth) pauseAndResume(ctx context.Context, target config.Target, label string, pause vmAction) error {
-	if err := pause(ctx, target.Node, target.VMID); err != nil {
-		return fmt.Errorf("pause %s: %w", label, err)
+func (s *Sloth) disruptAndRecover(ctx context.Context, target config.Target, label string, disrupt, recover vmAction) error {
+	if err := disrupt(ctx, target.Node, target.VMID); err != nil {
+		return fmt.Errorf("disrupt %s: %w", label, err)
 	}
 
 	resumeAfter := s.cfg.Chaos.ResumeAfter.Duration
-	slog.Info("target paused", "target", label, "resuming_in", resumeAfter)
+	slog.Info("target disrupted", "target", label, "recovering_in", resumeAfter)
 
 	select {
 	case <-ctx.Done():
-		slog.Warn("shutting down while target is paused, attempting resume", "target", label)
-		if err := s.client.ResumeVM(context.Background(), target.Node, target.VMID); err != nil {
-			slog.Error("failed to resume on shutdown", "target", label, "err", err)
+		slog.Warn("shutting down while target is disrupted, attempting recovery", "target", label)
+		recoverCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := recover(recoverCtx, target.Node, target.VMID); err != nil {
+			slog.Error("failed to recover on shutdown", "target", label, "err", err)
 		}
 		return ctx.Err()
 	case <-time.After(resumeAfter):
 	}
 
-	if err := s.client.ResumeVM(ctx, target.Node, target.VMID); err != nil {
-		return fmt.Errorf("resume %s: %w", label, err)
+	if err := recover(ctx, target.Node, target.VMID); err != nil {
+		return fmt.Errorf("recover %s: %w", label, err)
 	}
 
-	slog.Info("target resumed", "target", label)
+	slog.Info("target recovered", "target", label)
 	return nil
 }

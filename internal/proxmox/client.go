@@ -86,6 +86,10 @@ func (c *Client) StopVM(ctx context.Context, node string, vmid int) error {
 	return c.post(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/status/stop", node, vmid), nil)
 }
 
+func (c *Client) StartVM(ctx context.Context, node string, vmid int) error {
+	return c.post(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/status/start", node, vmid), nil)
+}
+
 func (c *Client) ResetVM(ctx context.Context, node string, vmid int) error {
 	return c.post(ctx, fmt.Sprintf("/nodes/%s/qemu/%d/status/reset", node, vmid), nil)
 }

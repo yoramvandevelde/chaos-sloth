@@ -9,4 +9,3 @@ FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /chaos-sloth /usr/local/bin/chaos-sloth
 ENTRYPOINT ["chaos-sloth"]
-CMD ["-config", "/etc/chaos-sloth/config.yaml"]

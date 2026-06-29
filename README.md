@@ -1,6 +1,6 @@
 # chaos-sloth
 
-Chaos engineering for Proxmox. It sloooowly kills k8s nodes in my proxmox env. It periodically targets a random VM from a configured list and performs a disruptive action (hibernate, pause, stop, or reset), then resumes it automatically.
+Chaos engineering for Proxmox. It sloooowly kills k8s nodes in my proxmox env. It periodically targets a random VM from a configured list and performs a disruptive action, then automatically recovers it. `reset` is the only exception — it restarts the VM itself.
 
 Inspired by [chaoskube](https://github.com/linki/chaoskube), but for Proxmox VMs instead of Kubernetes pods.
 
@@ -16,10 +16,10 @@ Inspired by [chaoskube](https://github.com/linki/chaoskube), but for Proxmox VMs
 
 | Action | Proxmox UI equivalent | Effect |
 |---|---|---|
-| `hibernate` | Hibernate | Saves VM state to disk, stops the VM, frees host RAM |
-| `pause` | Pause | Freezes VM in RAM, host RAM remains occupied |
-| `stop` | Stop | Graceful ACPI shutdown, VM stays off until manually started |
-| `reset` | Reset | Hard reset, no graceful shutdown |
+| `hibernate` | Hibernate | Saves VM state to disk, stops the VM, frees host RAM — auto-resumes after `resume_after` |
+| `pause` | Pause | Freezes VM in RAM, host RAM remains occupied — auto-resumes after `resume_after` |
+| `stop` | Stop | Graceful ACPI shutdown — auto-starts after `resume_after` |
+| `reset` | Reset | Hard reset, VM restarts itself — no recovery delay |
 | `random` | — | Randomly picks one of the above each time |
 
 ## Configuration
