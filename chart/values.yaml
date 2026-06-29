@@ -1,0 +1,39 @@
+image:
+  repository: ghcr.io/yoramvandevelde/chaos-sloth
+  pullPolicy: IfNotPresent
+  tag: ""  # defaults to appVersion
+
+proxmox:
+  url: "https://proxmox.example.com:8006"
+  tokenId: "user@pam!chaos-sloth"
+  tokenSecret: ""       # ignored when existingSecret is set
+  existingSecret: ""    # name of an existing Secret; must have key "token-secret"
+  insecureTls: false
+
+# List of VMs chaos-sloth may target.
+# Rendered as JSON and passed via CHAOS_TARGETS env var.
+targets: []
+# - node: pve1
+#   vmid: 101
+#   name: web-1
+
+chaos:
+  action: "hibernate"   # hibernate | pause | stop | reset | random
+  resumeAfter: "5m"     # only relevant for hibernate and pause
+  interval: "30m"
+  jitter: 20            # ±% variation on interval (0 = no jitter)
+  dryRun: false
+
+serviceAccount:
+  create: true
+  name: ""
+
+podAnnotations: {}
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

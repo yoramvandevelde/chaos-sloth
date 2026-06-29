@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chaos-sloth.fullname" . }}
+  labels:
+    {{- include "chaos-sloth.labels" . | nindent 4 }}
+spec:
+  replicas: 1  # must always be 1 — multiple replicas would fire duplicate chaos events
+  selector:
+    matchLabels:
+      {{- include "chaos-sloth.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "chaos-sloth.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "chaos-sloth.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: chaos-sloth
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: PROXMOX_URL
+              value: {{ .Values.proxmox.url | quote }}
+            - name: PROXMOX_TOKEN_ID
+              value: {{ .Values.proxmox.tokenId | quote }}
+            - name: PROXMOX_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "chaos-sloth.secretName" . }}
+                  key: token-secret
+            {{- if .Values.proxmox.insecureTls }}
+            - name: PROXMOX_INSECURE_TLS
+              value: "true"
+            {{- end }}
+            - name: CHAOS_ACTION
+              value: {{ .Values.chaos.action | quote }}
+            - name: CHAOS_RESUME_AFTER
+              value: {{ .Values.chaos.resumeAfter | quote }}
+            - name: CHAOS_INTERVAL
+              value: {{ .Values.chaos.interval | quote }}
+            - name: CHAOS_JITTER
+              value: {{ .Values.chaos.jitter | quote }}
+            - name: CHAOS_DRY_RUN
+              value: {{ .Values.chaos.dryRun | quote }}
+            - name: CHAOS_TARGETS
+              value: {{ .Values.targets | toJson | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

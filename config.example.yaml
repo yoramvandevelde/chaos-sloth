@@ -1,0 +1,46 @@
+proxmox:
+  url: "https://proxmox.example.com:8006"
+  token_id: "user@pam!chaos-sloth"
+  token_secret: "${PROXMOX_TOKEN_SECRET}"
+  insecure_tls: false  # set to true if using a self-signed certificate
+
+# VMs that chaos-sloth may target (add as many as you like)
+# "node" is the Proxmox node name, "vmid" is the VM ID
+targets:
+  - node: "pve1"
+    vmid: 101
+    name: "web-1"
+  - node: "pve1"
+    vmid: 102
+    name: "web-2"
+  - node: "pve2"
+    vmid: 201
+    name: "worker-1"
+  - node: "pve2"
+    vmid: 202
+    name: "worker-2"
+  - node: "pve3"
+    vmid: 301
+    name: "db-replica"
+
+chaos:
+  # Action: hibernate | pause | stop | reset | random
+  # - hibernate: save state to disk, stop the VM (= "Hibernate" in Proxmox UI)
+  # - pause:     freeze VM in RAM, fast (= "Pause" in Proxmox UI)
+  # - stop:      graceful shutdown (stays off until manually started)
+  # - reset:     hard reset, no graceful shutdown
+  # - random:    randomly picks one of the four each time
+  action: "hibernate"
+
+  # How long the VM stays hibernated/paused (only relevant for hibernate and pause)
+  resume_after: "5m"
+
+  # How often a chaos event occurs
+  interval: "30m"
+
+  # Random variation on the interval, in percent (0 = no jitter)
+  # E.g. 20 with interval 30m → somewhere between 24m and 36m
+  jitter: 20
+
+  # dry_run: log what would happen without making real API calls
+  dry_run: false
