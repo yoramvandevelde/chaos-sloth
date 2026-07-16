@@ -1,0 +1,19 @@
+proxmox:
+  url: "https://proxmox.example.com:8006"
+  token_id: "user@pam!chaos-sloth"
+  token_secret: "secret123"
+  insecure_tls: false
+
+targets:
+  - node: "pve1"
+    vmid: 101
+    name: "web-1"
+  - node: "pve2"
+    vmid: 201
+
+chaos:
+  action: "hibernate"
+  resume_after: "10m"
+  interval: "30m"
+  jitter: 20
+  dry_run: false

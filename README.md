@@ -128,3 +128,23 @@ helm install chaos-sloth ./chart -f values.yaml --set proxmox.existingSecret=pro
 ```bash
 make build
 ```
+
+## Testing
+
+```bash
+go test ./...
+```
+
+Tests use a fake Proxmox API server (`httptest.NewServer`) and a `fakeClient` mock — no real Proxmox credentials needed. You can also run with the race detector:
+
+```bash
+go test -race ./...
+```
+
+### Test coverage
+
+| Package | What's tested |
+|---|---|
+| `internal/config` | YAML parsing, env var overrides, validation rules, `${ENV_VAR}` expansion, duration parsing |
+| `internal/proxmox` | HTTP POST requests, auth headers, error handling (4xx/5xx), content-type, context cancellation |
+| `internal/chaos` | Action selection (fixed + random), jitter bounds, dry-run, all 4 action flows, disrupt/recover failures, graceful shutdown recovery |

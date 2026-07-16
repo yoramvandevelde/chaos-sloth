@@ -1,0 +1,5 @@
+proxmox:
+  url: "https://proxmox.example.com:8006"
+  token_id: "user@pam!chaos-sloth"
+  token_secret: "secret123"
+  invalid_key: [broken yaml

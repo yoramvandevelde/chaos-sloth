@@ -1,0 +1,9 @@
+proxmox:
+  url: ""
+
+targets: []
+
+chaos:
+  action: "invalid_action"
+  interval: "-5m"
+  jitter: 150

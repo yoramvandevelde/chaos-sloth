@@ -13,13 +13,26 @@ import (
 
 var randomActions = []config.Action{config.ActionHibernate, config.ActionPause, config.ActionStop, config.ActionReset}
 
+// VMClient abstracts the Proxmox client for testability.
+type VMClient interface {
+	HibernateVM(ctx context.Context, node string, vmid int) error
+	PauseVM(ctx context.Context, node string, vmid int) error
+	ResumeVM(ctx context.Context, node string, vmid int) error
+	StopVM(ctx context.Context, node string, vmid int) error
+	StartVM(ctx context.Context, node string, vmid int) error
+	ResetVM(ctx context.Context, node string, vmid int) error
+}
+
+// Compile-time check that *proxmox.Client satisfies VMClient.
+var _ VMClient = (*proxmox.Client)(nil)
+
 type Sloth struct {
 	cfg    *config.Config
-	client *proxmox.Client
+	client VMClient
 	rng    *rand.Rand
 }
 
-func New(cfg *config.Config, client *proxmox.Client) *Sloth {
+func New(cfg *config.Config, client VMClient) *Sloth {
 	return &Sloth{
 		cfg:    cfg,
 		client: client,
